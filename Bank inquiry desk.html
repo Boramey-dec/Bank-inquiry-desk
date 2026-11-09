@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bank inquiry desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F3F2; --surface:#FFFFFF; --sidebar:#FFFFFF; --line:#DDE1E4; --line-strong:#C9CED4;
+  --ink:#1D2433; --ink-2:#4B5463; --ink-3:#737B88;
+  --brand:#2C4596; --brand-ink:#FFFFFF; --brand-soft:#E3E8F6; --brand-hover:#243A80;
+  --danger:#B3261E; --ok:#2E7D4F;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171D; --surface:#1C2028; --sidebar:#181B22; --line:#2C323C; --line-strong:#3A414D;
+    --ink:#E7EAF0; --ink-2:#B4BAC5; --ink-3:#8A919D;
+    --brand:#6F8BE0; --brand-ink:#0E1424; --brand-soft:#252E48; --brand-hover:#859CE8;
+    --danger:#F2867E; --ok:#6CC28F; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171D; --surface:#1C2028; --sidebar:#181B22; --line:#2C323C; --line-strong:#3A414D;
+  --ink:#E7EAF0; --ink-2:#B4BAC5; --ink-3:#8A919D;
+  --brand:#6F8BE0; --brand-ink:#0E1424; --brand-soft:#252E48; --brand-hover:#859CE8;
+  --danger:#F2867E; --ok:#6CC28F; color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.app{display:grid;grid-template-columns:180px 1fr;height:100%}
+
+/* Sidebar */
+.side{background:var(--sidebar);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 10px}
+.logo{display:flex;align-items:center;gap:8px;padding:2px 6px 18px;font-weight:600;font-size:13px}
+.logo-mark{width:22px;height:22px;border-radius:6px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-size:12px;font-weight:600}
+.nav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:13px;margin-bottom:2px}
+.nav a:hover{background:var(--bg)}
+.nav a[aria-current="page"]{background:var(--brand-soft);color:var(--brand);font-weight:500}
+.nav svg,.help svg{width:15px;height:15px;flex:none}
+.help{margin-top:auto;display:flex;align-items:center;gap:9px;padding:8px 10px;border:0;background:none;cursor:pointer;font-size:13px;border-radius:8px;text-align:left}
+.help:hover{background:var(--bg)}
+
+/* Main */
+main{overflow-y:auto;height:100%}
+.wrap{max-width:960px;margin:0 auto;padding:22px 24px 0;display:flex;flex-direction:column;min-height:100%}
+h1{font-size:15px;font-weight:600;margin:0 0 4px}
+.sub{margin:0 0 14px;color:var(--ink-2);font-size:12.5px}
+
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.mode{all:unset;cursor:pointer;display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;position:relative}
+.mode:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.mode:hover{border-color:var(--line-strong)}
+.mode b{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+.mode span{font-size:11.5px;color:var(--ink-2)}
+.mode .count{position:absolute;top:14px;right:14px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;border:1.5px solid var(--line-strong);font-size:10.5px;display:grid;place-items:center;color:var(--ink-2)}
+.mode[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.mode[aria-pressed="true"] span{color:var(--brand-ink);opacity:.85}
+.mode[aria-pressed="true"] .count{border-color:currentColor;color:var(--brand-ink)}
+
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-2);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.linkbtn{border:0;background:none;color:var(--brand);text-decoration:underline;font-size:11.5px;font-weight:500;cursor:pointer;padding:0}
+.linkbtn:disabled{color:var(--ink-3);cursor:default;text-decoration:none}
+
+.thread{flex:1;display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
+.q{align-self:flex-end;background:var(--brand);color:var(--brand-ink);padding:9px 14px;border-radius:12px;font-size:13px;font-weight:500;max-width:min(560px,85%);white-space:pre-wrap;overflow-wrap:anywhere}
+.ans{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:14px 18px 16px}
+.ans-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.ans-head b{font-size:12.5px;font-weight:600}
+.status{font-size:10.5px;color:var(--ink-3)}
+.status.err{color:var(--danger)}
+.ans-body{font-family:var(--serif);font-size:15px;line-height:1.65;max-width:64ch;overflow-wrap:anywhere}
+.ans-body p{margin:0 0 10px}
+.ans-body ul,.ans-body ol{margin:0 0 10px;padding-left:20px}
+.ans-body li{margin-bottom:5px}
+.ans-body h3{font-family:var(--sans);font-size:13px;margin:12px 0 6px}
+.ans-body code{font-size:13px;background:var(--bg);padding:1px 4px;border-radius:4px}
+.ans-body > :last-child{margin-bottom:0}
+.thinking{color:var(--ink-3);font-family:var(--sans);font-size:13px}
+.thinking::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+@media (prefers-reduced-motion: reduce){.thinking::after{animation:none;content:"..."}}
+.sources{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.src{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+
+.empty{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:28px 4px;color:var(--ink-2);max-width:520px}
+.empty h2{font-size:14px;color:var(--ink);margin:0 0 6px;font-weight:600}
+.empty p{margin:0 0 10px;font-size:13px}
+
+.composer{position:sticky;bottom:0;background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 0 0;border-bottom:0;padding:14px 14px calc(12px + env(safe-area-inset-bottom,0px));margin-top:auto}
+.row{display:flex;gap:8px}
+.row input{flex:1;min-width:0;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;background:var(--surface);font-size:13px}
+.row input::placeholder{color:var(--ink-3)}
+.btn{border:0;background:var(--brand);color:var(--brand-ink);border-radius:8px;padding:0 16px;font-weight:500;font-size:13px;cursor:pointer;min-height:40px;white-space:nowrap}
+.btn:hover{background:var(--brand-hover)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+.btn.ghost:hover{background:var(--bg)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line-strong)}
+.chips{display:flex;gap:6px;align-items:center;margin-top:10px;overflow-x:auto;scrollbar-width:none;font-size:11.5px;color:var(--ink-2)}
+.chips::-webkit-scrollbar{display:none}
+.chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+.notice{font-size:12px;color:var(--ink-2);margin-top:8px}
+.notice.err{color:var(--danger)}
+
+/* Data source */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tab{border:0;background:none;padding:9px 12px;font-size:13px;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.ds-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;align-items:start;padding-bottom:28px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;gap:8px}
+.doclist{list-style:none;margin:0;padding:6px}
+.doclist li button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:9px 10px;border-radius:8px}
+.doclist li button:hover{background:var(--bg)}
+.doclist li button:focus-visible{outline:2px solid var(--brand)}
+.doclist li button[aria-current="true"]{background:var(--brand-soft)}
+.doclist .t{font-size:13px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doclist .d{font-size:11.5px;color:var(--ink-3)}
+.list-empty{padding:18px 14px;font-size:12.5px;color:var(--ink-2)}
+.form{padding:14px;display:flex;flex-direction:column;gap:12px}
+.form label{font-size:12px;font-weight:500;display:flex;flex-direction:column;gap:5px}
+.form input[type=text],.form textarea{border:1px solid var(--line-strong);border-radius:8px;padding:9px 11px;background:var(--surface);font-size:13px;font-weight:400}
+.form textarea{min-height:280px;resize:vertical;font-family:var(--sans);line-height:1.5}
+.hint{font-size:11.5px;color:var(--ink-3);font-weight:400}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.actions .spacer{flex:1}
+.filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.readonly{font-size:12px;color:var(--ink-2);background:var(--bg);border-radius:8px;padding:8px 10px}
+
+/* Help dialog */
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);max-width:440px;width:calc(100% - 32px);padding:20px}
+dialog::backdrop{background:rgba(10,14,24,.45)}
+dialog h2{margin:0 0 8px;font-size:15px}
+dialog p,dialog li{font-size:13px;color:var(--ink-2)}
+dialog ol{padding-left:18px}
+
+.mobile-bar{display:none}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .side{display:none}
+  .mobile-bar{display:flex;align-items:center;gap:8px;background:var(--sidebar);border-bottom:1px solid var(--line);padding:8px 12px;position:sticky;top:0;z-index:5}
+  .mobile-bar .logo{padding:0;flex:1}
+  .mobile-bar a{font-size:12.5px;color:var(--ink-2);text-decoration:none;padding:6px 10px;border-radius:8px}
+  .mobile-bar a[aria-current="page"]{background:var(--brand-soft);color:var(--brand);font-weight:500}
+  .wrap{padding:16px 14px 0}
+  .modes{grid-template-columns:1fr}
+  .ds-grid{grid-template-columns:1fr}
+  .ans-body{font-size:14.5px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="Main navigation">
+    <div class="logo"><span class="logo-mark" aria-hidden="true">B</span>Bank inquiry desk</div>
+    <nav class="nav">
+      <a href="#home" data-route="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+      <a href="#data-source" data-route="data-source">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Data source</a>
+    </nav>
+    <button class="help" type="button" data-help>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Help</button>
+  </aside>
+
+  <div class="mobile-bar">
+    <div class="logo"><span class="logo-mark" aria-hidden="true">B</span>Bank inquiry desk</div>
+    <a href="#home" data-route="home">Home</a>
+    <a href="#data-source" data-route="data-source">Data source</a>
+  </div>
+
+  <main id="main"></main>
+</div>
+
+<dialog id="helpDialog">
+  <h2>How the inquiry desk works</h2>
+  <ol>
+    <li>Add your bank’s documents under <b>Data source</b>: product sheets go in Product documents, known issues and fixes go in Issue inquiries.</li>
+    <li>On <b>Home</b>, pick which set to search, then ask a question. Answers come only from the documents in that set.</li>
+    <li>Ask follow-up questions in the same chat. Each set keeps its own conversation.</li>
+  </ol>
+  <p>Answers are written by Claude and use your Claude usage. Check important figures against the source document.</p>
+  <div class="actions"><span class="spacer"></span><button class="btn" type="button" id="helpClose">Got it</button></div>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+
+const MODES = {
+  products: {
+    key:"products", collection:"productDocs",
+    title:"Product documents", desc:"Fees, rates, limits and terms",
+    placeholder:"Ask about a product, fee or rate",
+    chips:["What is the monthly fee and how can it be waived?","How much interest does the savings account pay?","Does the credit card charge foreign transaction fees?"],
+    role:"You are a bank product specialist answering customer-service staff and customers. Explain products, fees, interest rates, limits, eligibility and terms."
+  },
+  issues: {
+    key:"issues", collection:"issueDocs",
+    title:"Issue inquiries", desc:"Known issues, fixes and escalation",
+    placeholder:"Describe the customer’s issue",
+    chips:["Customer didn’t receive the OTP code","A transfer shows pending for over a day","Card was declined at an ATM abroad"],
+    role:"You are a bank support specialist helping resolve customer issues. Identify the matching known issue, give the fix as clear numbered steps, and say when and how to escalate."
+  }
+};
+const MAX_CONTEXT_CHARS = 180000;
+const MAX_DOC_CHARS = 80000;
+
+const state = {
+  route:"home",
+  mode:"products",
+  threads:{products:[], issues:[]},
+  docs:{products:[], issues:[]},
+  dbStatus:"loading",       // loading | ready | unavailable | error
+  sampleStatus:"loading",   // loading | ready | unavailable | denied
+  busy:false,
+  dsMode:"products",
+  dsSelected:null,          // doc id or "new"
+  canWrite:true,
+  notice:"",
+};
+let db=null, sample=null, user=null, controller=null;
+
+/* ---------- persistence for chat (per viewer) ---------- */
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem("bid-threads");
+    if(raw){ const t = JSON.parse(raw); if(t && Array.isArray(t.products) && Array.isArray(t.issues)) state.threads = t; }
+    const m = localStorage.getItem("bid-mode"); if(m && MODES[m]) state.mode = m;
+  }catch(e){}
+  // drop any half-finished answers from an interrupted load
+  for(const k of Object.keys(state.threads)){
+    state.threads[k] = state.threads[k].filter(x=>x && x.q).map(x=> x.status==="pending" ? {...x,status:"error",error:"This answer was interrupted. Ask again."} : x);
+  }
+}
+function saveLocal(){
+  try{
+    localStorage.setItem("bid-threads", JSON.stringify(state.threads));
+    localStorage.setItem("bid-mode", state.mode);
+  }catch(e){}
+}
+
+/* ---------- helpers ---------- */
+const $ = (s,el=document)=>el.querySelector(s);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function inline(s){
+  return esc(s)
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1<em>$2</em>");
+}
+function md(text){
+  const lines = String(text).replace(/\r/g,"").split("\n");
+  let out="", list=null, para=[];
+  const flushPara=()=>{ if(para.length){ out+="<p>"+inline(para.join(" "))+"</p>"; para=[]; } };
+  const closeList=()=>{ if(list){ out+="</"+list+">"; list=null; } };
+  for(const raw of lines){
+    const line = raw.trimEnd();
+    let m;
+    if(!line.trim()){ flushPara(); closeList(); continue; }
+    if((m=line.match(/^\s*#{1,6}\s+(.*)$/))){ flushPara(); closeList(); out+="<h3>"+inline(m[1])+"</h3>"; continue; }
+    if((m=line.match(/^\s*[-*•]\s+(.*)$/))){ flushPara(); if(list!=="ul"){ closeList(); out+="<ul>"; list="ul"; } out+="<li>"+inline(m[1])+"</li>"; continue; }
+    if((m=line.match(/^\s*\d+[.)]\s+(.*)$/))){ flushPara(); if(list!=="ol"){ closeList(); out+="<ol>"; list="ol"; } out+="<li>"+inline(m[1])+"</li>"; continue; }
+    closeList(); para.push(line.trim());
+  }
+  flushPara(); closeList();
+  return out;
+}
+function splitSources(text){
+  const m = String(text).match(/\n?\s*SOURCES:\s*(.*)\s*$/i);
+  if(!m) return {body:text, sources:[]};
+  const sources = m[1].split("|").map(s=>s.trim()).filter(s=>s && !/^none$/i.test(s));
+  return {body:text.slice(0, m.index).trimEnd(), sources};
+}
+function fmtDate(ts){
+  if(!ts) return "";
+  try{ return new Date(ts).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}); }catch(e){ return ""; }
+}
+
+/* ---------- routing ---------- */
+function routeFromHash(){
+  const h = location.hash.replace(/^#/,"");
+  state.route = h==="data-source" ? "data-source" : "home";
+  document.querySelectorAll("[data-route]").forEach(a=>{
+    if(a.dataset.route===state.route) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  const main = $("#main");
+  main.innerHTML = state.route==="data-source" ? renderSources() : renderHome();
+  if(state.route==="home"){ bindHome(); scrollThread(); } else bindSources();
+}
+
+function renderHome(){
+  const mode = MODES[state.mode];
+  const thread = state.threads[state.mode];
+  const docCount = state.docs[state.mode].length;
+  const asked = thread.length;
+  const modeCards = Object.values(MODES).map(m=>`
+    <button class="mode" type="button" data-mode="${m.key}" aria-pressed="${m.key===state.mode}">
+      <b>${m.title}</b><span>${m.desc}</span>
+      <i class="count" aria-label="${state.threads[m.key].length} questions asked">${state.threads[m.key].length}</i>
+    </button>`).join("");
+
+  let body;
+  if(thread.length){
+    body = thread.map((t,i)=>{
+      let content, status;
+      if(t.status==="pending"){
+        status = `<span class="status">Thinking</span>`;
+        content = t.answer ? md(t.answer) : `<p class="thinking">Searching ${esc(mode.title.toLowerCase())}</p>`;
+      }else if(t.status==="error"){
+        status = `<span class="status err">Not answered</span>`;
+        content = (t.answer? md(t.answer):"") + `<p class="thinking" style="color:var(--danger)">${esc(t.error||"Something went wrong.")}</p>`;
+      }else{
+        status = `<span class="status">Done</span>`;
+        content = md(t.answer);
+      }
+      const src = t.sources && t.sources.length ? `<div class="sources">From: ${t.sources.map(s=>`<span class="src">${esc(s)}</span>`).join("")}</div>` : "";
+      return `<div class="q">${esc(t.q)}</div>
+        <article class="ans" aria-live="${i===thread.length-1?"polite":"off"}">
+          <div class="ans-head"><b>Answer</b>${status}</div>
+          <div class="ans-body">${content}</div>${src}
+        </article>`;
+    }).join("");
+  }else{
+    let msg;
+    if(state.dbStatus==="loading") msg = `<p>Loading your documents…</p>`;
+    else if(docCount===0) msg = `<h2>No ${esc(mode.title.toLowerCase())} yet</h2><p>Add documents under Data source and the desk will answer from them.</p><p><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="#data-source">Add documents</a></p>`;
+    else msg = `<h2>Ask about ${esc(mode.title.toLowerCase())}</h2><p>Answers come from ${docCount} document${docCount===1?"":"s"} in this set. Try one of the questions below or type your own.</p>`;
+    body = `<div class="empty">${msg}</div>`;
+  }
+
+  let notice = "";
+  if(state.sampleStatus==="unavailable") notice = `<p class="notice err">Answers need the Claude viewer. Open this page in Claude to ask questions.</p>`;
+  else if(state.sampleStatus==="denied") notice = `<p class="notice err">Asking Claude was declined for this visit. Reload the page to allow it.</p>`;
+  else if(state.notice) notice = `<p class="notice err">${esc(state.notice)}</p>`;
+
+  const disabled = state.busy || state.sampleStatus==="unavailable" || state.sampleStatus==="denied";
+  return `<div class="wrap">
+    <h1>Bank inquiry desk</h1>
+    <p class="sub">Search your own product and issue documents, and ask follow-up questions in the same chat.</p>
+    <div class="modes" role="group" aria-label="Document set">${modeCards}</div>
+    <div class="meta"><span>${asked} question${asked===1?"":"s"} asked</span>
+      <button class="linkbtn" type="button" id="clearBtn" ${asked&&!state.busy?"":"disabled"}>Clear conversation</button></div>
+    <div class="thread" id="thread">${body}</div>
+    <div class="composer">
+      <form class="row" id="askForm" autocomplete="off">
+        <input id="askInput" type="text" placeholder="${esc(mode.placeholder)}" aria-label="${esc(mode.placeholder)}" maxlength="1000" ${disabled?"disabled":""}>
+        ${state.busy
+          ? `<button class="btn ghost" type="button" id="stopBtn">Stop</button>`
+          : `<button class="btn" type="submit" ${disabled?"disabled":""}>Get answer</button>`}
+      </form>
+      <div class="chips"><span>Try:</span>${mode.chips.map(c=>`<button class="chip" type="button" data-chip="${esc(c)}" ${disabled?"disabled":""}>${esc(c)}</button>`).join("")}</div>
+      ${notice}
+    </div>
+  </div>`;
+}
+
+function bindHome(){
+  document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{
+    if(state.busy) return;
+    state.mode=b.dataset.mode; state.notice=""; saveLocal(); render(); $("#askInput")?.focus();
+  }));
+  $("#clearBtn")?.addEventListener("click",()=>{ state.threads[state.mode]=[]; state.notice=""; saveLocal(); render(); });
+  $("#askForm")?.addEventListener("submit",e=>{ e.preventDefault(); const v=$("#askInput").value.trim(); if(v) ask(v); });
+  $("#stopBtn")?.addEventListener("click",()=>controller?.abort());
+  document.querySelectorAll("[data-chip]").forEach(c=>c.addEventListener("click",()=>ask(c.dataset.chip)));
+}
+function scrollThread(){
+  const main=$("#main"); const t=$("#thread");
+  if(t && state.threads[state.mode].length) main.scrollTop = main.scrollHeight;
+}
+function updateLastAnswer(){
+  // Patch only the streaming answer to keep the input stable
+  const arts = document.querySelectorAll("#thread .ans");
+  const last = arts[arts.length-1]; const t = state.threads[state.mode].at(-1);
+  if(!last || !t) return;
+  last.querySelector(".ans-body").innerHTML = md(splitSources(t.answer||"").body) || `<p class="thinking">Searching</p>`;
+  const main=$("#main"); main.scrollTop = main.scrollHeight;
+}
+
+/* ---------- asking Claude ---------- */
+function buildPrompt(modeKey, question, history){
+  const m = MODES[modeKey];
+  let used=0; const parts=[];
+  for(const d of state.docs[modeKey]){
+    const block = `<document title="${String(d.title).replace(/"/g,"'")}">\n${d.content}\n</document>`;
+    if(used + block.length > MAX_CONTEXT_CHARS){ parts.push(`<!-- further documents omitted for length -->`); break; }
+    parts.push(block); used += block.length;
+  }
+  const convo = history.length ? history.map(h=>`Customer/staff: ${h.q}\nYou: ${splitSources(h.answer||"").body}`).join("\n\n") : "(none)";
+  return `${m.role}
+
+Answer ONLY from the documents below. If the documents don't contain the answer, say plainly that the ${m.title.toLowerCase()} don't cover it and suggest what to check or who to contact; never invent fees, rates, limits or procedures. Quote figures exactly as written, with currency and units. If the question is ambiguous between products or issues, briefly answer for each or ask which one is meant.
+
+Format: start with a one or two sentence direct answer, then, when useful, a short "Key details:" list of bullet points ("- ") or numbered steps for fixes. Keep it concise and plain. Use markdown bold sparingly. No headings, no tables.
+After the answer, on its own final line, write "SOURCES: " followed by the exact titles of the documents you used, separated by " | ", or "SOURCES: none".
+
+<documents>
+${parts.join("\n\n") || "(no documents)"}
+</documents>
+
+<earlier_conversation>
+${convo}
+</earlier_conversation>
+
+Question: ${question}`;
+}
+
+async function ask(question){
+  if(state.busy) return;
+  state.notice="";
+  if(!sample){
+    state.notice = state.sampleStatus==="loading" ? "Still connecting to Claude. Try again in a moment." : "";
+    render(); return;
+  }
+  const modeKey = state.mode;
+  if(state.dbStatus==="ready" && state.docs[modeKey].length===0){
+    state.notice = `Add ${MODES[modeKey].title.toLowerCase()} under Data source first.`; render(); return;
+  }
+  const history = state.threads[modeKey].filter(t=>t.status==="done").slice(-6);
+  const entry = {q:question, answer:"", status:"pending", sources:[], at:Date.now()};
+  state.threads[modeKey].push(entry);
+  state.busy=true; render();
+  controller = new AbortController();
+  try{
+    const res = await sample(buildPrompt(modeKey, question, history), {
+      signal: controller.signal, cache:false, modelTier:"default",
+      onText: ({text})=>{ entry.answer=text; if(state.route==="home" && state.mode===modeKey) updateLastAnswer(); }
+    });
+    const {body, sources} = splitSources(res.text||"");
+    entry.answer = body || "No answer came back. Try asking again.";
+    entry.sources = sources;
+    entry.status = "done";
+  }catch(err){
+    const code = err && err.code;
+    if(code==="not_granted"){ state.sampleStatus="denied"; entry.status="error"; entry.error="Claude wasn’t allowed for this page."; }
+    else if(code==="cancelled" || (err && err.name==="AbortError")){ entry.status = entry.answer ? "done" : "error"; entry.error="Stopped."; if(entry.answer) entry.answer = splitSources(entry.answer).body + "\n\n*(Stopped before the end.)*"; }
+    else if(code==="rate_limited"){ entry.status="error"; entry.answer=err.text||""; entry.error="Too many questions at once. Wait a moment and ask again."; }
+    else { entry.status="error"; entry.answer=(err&&err.text)||""; entry.error=(err&&err.message)||"The answer couldn’t be completed. Ask again."; }
+  }finally{
+    state.busy=false; controller=null; saveLocal();
+    if(state.route==="home") render();
+  }
+}
+
+/* ---------- data source page ---------- */
+function renderSources(){
+  const m = MODES[state.dsMode];
+  const docs = state.docs[state.dsMode];
+  const tabs = Object.values(MODES).map(x=>`<button class="tab" role="tab" type="button" data-ds="${x.key}" aria-selected="${x.key===state.dsMode}">${x.title} (${state.docs[x.key].length})</button>`).join("");
+
+  let listInner;
+  if(state.dbStatus==="loading") listInner = `<p class="list-empty">Loading documents…</p>`;
+  else if(state.dbStatus==="unavailable") listInner = `<p class="list-empty">Documents are stored with the artifact. Sign in and open this page in Claude to see them.</p>`;
+  else if(state.dbStatus==="error") listInner = `<p class="list-empty">Documents couldn’t load. Reload the page to try again.</p>`;
+  else if(!docs.length) listInner = `<p class="list-empty">No documents in ${esc(m.title.toLowerCase())} yet. Add one to start answering questions.</p>`;
+  else listInner = `<ul class="doclist">${docs.map(d=>`<li><button type="button" data-doc="${esc(d.id)}" aria-current="${state.dsSelected===d.id}">
+      <span class="t">${esc(d.title||"Untitled")}</span>
+      <span class="d">${(d.content||"").length.toLocaleString()} characters${d.updatedAt?" · updated "+fmtDate(d.updatedAt):""}</span></button></li>`).join("")}</ul>`;
+
+  const sel = state.dsSelected==="new" ? {id:null,title:"",content:""} : docs.find(d=>d.id===state.dsSelected);
+  let editor;
+  if(!sel){
+    editor = `<div class="panel"><p class="list-empty">Select a document to view or edit it${state.canWrite?", or add a new one":""}.</p></div>`;
+  }else{
+    const ro = !state.canWrite;
+    editor = `<form class="panel" id="docForm">
+      <div class="panel-head">${sel.id? (ro?"Document":"Edit document") : "New document"}</div>
+      <div class="form">
+        ${ro?`<p class="readonly">You can read these documents but not change them.</p>`:""}
+        <label>Title<input type="text" id="docTitle" maxlength="160" value="${esc(sel.title)}" required ${ro?"readonly":""}
+          placeholder="${state.dsMode==="products"?"Piggy Bank installment deposit":"OTP code not received"}"></label>
+        <label>Content
+          <span class="hint">Paste the document text${ro?"":", or load a .txt, .md, .csv or .json file"}. Include figures exactly as published.</span>
+          <textarea id="docContent" maxlength="${MAX_DOC_CHARS}" ${ro?"readonly":""} required>${esc(sel.content)}</textarea></label>
+        ${ro?"":`<div class="actions">
+          <span class="btn ghost filebtn">Load file<input type="file" id="docFile" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" aria-label="Load file"></span>
+          ${sel.id?`<button class="btn danger" type="button" id="docDelete">Delete</button>`:""}
+          <span class="spacer"></span>
+          <button class="btn ghost" type="button" id="docCancel">Cancel</button>
+          <button class="btn" type="submit" id="docSave">${sel.id?"Save changes":"Add document"}</button>
+        </div>`}
+        <p class="notice ${state.notice.startsWith("Saved")||state.notice.startsWith("Added")||state.notice.startsWith("Loaded")?"":"err"}" id="docNotice">${esc(state.notice)}</p>
+      </div>
+    </form>`;
+  }
+
+  return `<div class="wrap">
+    <h1>Data source</h1>
+    <p class="sub">The desk answers only from these documents. Keep product terms and known issues current.</p>
+    <div class="tabs" role="tablist">${tabs}</div>
+    <div class="ds-grid">
+      <div class="panel">
+        <div class="panel-head"><span>${esc(m.title)}</span>
+          ${state.canWrite && state.dbStatus==="ready" ? `<button class="btn" type="button" id="docNew" style="min-height:32px;padding:0 12px">Add document</button>`:""}</div>
+        ${listInner}
+      </div>
+      ${editor}
+    </div>
+  </div>`;
+}
+
+function bindSources(){
+  document.querySelectorAll("[data-ds]").forEach(t=>t.addEventListener("click",()=>{ state.dsMode=t.dataset.ds; state.dsSelected=null; state.notice=""; render(); }));
+  document.querySelectorAll("[data-doc]").forEach(b=>b.addEventListener("click",()=>{ state.dsSelected=b.dataset.doc; state.notice=""; render(); }));
+  $("#docNew")?.addEventListener("click",()=>{ state.dsSelected="new"; state.notice=""; render(); $("#docTitle")?.focus(); });
+  $("#docCancel")?.addEventListener("click",()=>{ state.dsSelected=null; state.notice=""; render(); });
+  $("#docFile")?.addEventListener("change",e=>{
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    if(f.size > MAX_DOC_CHARS*2){ setDocNotice("That file is too large. Keep documents under about 80,000 characters (split longer ones).", true); return; }
+    const r = new FileReader();
+    r.onload = ()=>{
+      const text = String(r.result||"").slice(0, MAX_DOC_CHARS);
+      $("#docContent").value = text;
+      if(!$("#docTitle").value.trim()) $("#docTitle").value = f.name.replace(/\.[^.]+$/,"");
+      setDocNotice("Loaded "+f.name+". Review it, then save.", false);
+    };
+    r.onerror = ()=>setDocNotice("That file couldn’t be read. Paste the text instead.", true);
+    r.readAsText(f);
+  });
+  $("#docForm")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    if(!state.canWrite || !db) return;
+    const title = $("#docTitle").value.trim(); const content = $("#docContent").value.trim();
+    if(!title || !content){ setDocNotice("Add a title and some content before saving.", true); return; }
+    const btn = $("#docSave"); btn.disabled=true; btn.textContent="Saving…";
+    const coll = db.collection(MODES[state.dsMode].collection);
+    try{
+      const isNew = state.dsSelected==="new";
+      const ref = isNew ? coll.doc() : coll.doc(state.dsSelected);
+      const prev = isNew ? null : state.docs[state.dsMode].find(d=>d.id===state.dsSelected);
+      await ref.set({title, content, createdAt: prev?.createdAt || Date.now(), updatedAt: Date.now()});
+      state.dsSelected = ref.id || state.dsSelected;
+      state.notice = isNew ? "Added. The desk will use it for new questions." : "Saved.";
+      render();
+    }catch(err){
+      btn.disabled=false; btn.textContent = state.dsSelected==="new"?"Add document":"Save changes";
+      if(err && (err.code==="permission_denied"||err.code==="not_granted")){ state.canWrite=false; state.notice="You don’t have permission to change these documents."; render(); }
+      else setDocNotice((err&&err.message)||"The document couldn’t be saved. Try again.", true);
+    }
+  });
+  $("#docDelete")?.addEventListener("click", async ()=>{
+    const d = state.docs[state.dsMode].find(x=>x.id===state.dsSelected); if(!d||!db) return;
+    if(!confirm(`Delete “${d.title}”? The desk will stop answering from it.`)) return;
+    try{ await db.collection(MODES[state.dsMode].collection).doc(d.id).delete(); state.dsSelected=null; state.notice=""; render(); }
+    catch(err){ setDocNotice((err&&err.message)||"The document couldn’t be deleted.", true); }
+  });
+}
+function setDocNotice(msg, isErr){ const n=$("#docNotice"); if(n){ n.textContent=msg; n.classList.toggle("err", !!isErr); } }
+
+/* ---------- capabilities ---------- */
+async function initDb(){
+  const timer = setTimeout(()=>{ if(state.dbStatus==="loading"){ state.dbStatus="error"; render(); } }, 10000);
+  try{ db = await claude.use("db"); }catch(e){ db=null; }
+  if(!db){ clearTimeout(timer); state.dbStatus="unavailable"; state.canWrite=false; render(); return; }
+  const loaded = {products:false, issues:false};
+  for(const m of Object.values(MODES)){
+    db.collection(m.collection).orderBy("title").onSnapshot(snap=>{
+      state.docs[m.key] = snap.docs.filter(d=>d.exists).map(d=>({id:d.id, ...d.data()}));
+      loaded[m.key]=true;
+      if(loaded.products && loaded.issues){ clearTimeout(timer); state.dbStatus="ready"; }
+      softRender();
+    }, err=>{ clearTimeout(timer); state.dbStatus="error"; softRender(); });
+  }
+}
+function softRender(){
+  // Avoid clobbering a form the person is typing in, or a streaming answer
+  if(state.busy && state.route==="home") return;
+  const active = document.activeElement;
+  if(state.route==="data-source" && active && (active.id==="docTitle"||active.id==="docContent")) return;
+  if(state.route==="home" && active && active.id==="askInput"){
+    const v=active.value, s=active.selectionStart; render(); const i=$("#askInput"); if(i){ i.value=v; i.focus(); try{i.setSelectionRange(s,s);}catch(e){} } return;
+  }
+  render();
+}
+async function initSample(){
+  try{ sample = await claude.use("sample"); }catch(e){ sample=null; }
+  state.sampleStatus = sample ? "ready" : "unavailable";
+  softRender();
+}
+async function initUser(){
+  try{ user = await claude.use("user"); }catch(e){ user=null; }
+  if(user){
+    try{ const c = await user.can("data.write"); if(c===false){ state.canWrite=false; softRender(); } }catch(e){}
+  }
+}
+
+/* ---------- start ---------- */
+loadLocal();
+document.querySelectorAll("[data-help]").forEach(b=>b.addEventListener("click",()=>$("#helpDialog").showModal()));
+$("#helpClose").addEventListener("click",()=>$("#helpDialog").close());
+window.addEventListener("hashchange", routeFromHash);
+routeFromHash();
+if(window.claude && typeof window.claude.use==="function"){ initDb(); initSample(); initUser(); }
+else { state.dbStatus="unavailable"; state.sampleStatus="unavailable"; state.canWrite=false; render(); }
+})();
+</script>
+</body>
+</html>
